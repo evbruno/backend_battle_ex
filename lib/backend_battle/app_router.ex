@@ -1,6 +1,9 @@
 defmodule BackendBattle.AppRouter do
   use Plug.Router
 
+  alias BackendBattle.AppRepo
+  alias BackendBattle.Message
+
   plug(Plug.Parsers,
     parsers: [:json],
     pass: ["application/json"],
@@ -12,22 +15,31 @@ defmodule BackendBattle.AppRouter do
 
   get "/pessoas" do
     conn = fetch_query_params(conn)
-    term = conn.params["t"]
 
-    found = [
-      %{id: UUID.uuid5(:oid, "Foo-#{term}"), apelido: "Foo#{term}"},
-      %{id: UUID.uuid5(:oid, "Bar-#{term}"), apelido: "Bar#{term}"}
-    ]
+    case conn.params["t"] do
+      nil ->
+        send_resp(conn, 400, [])
 
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(200, Jason.encode!(found))
+      "" ->
+        send_resp(conn, 400, [])
+
+      term ->
+        case AppRepo.find_by_term(term) do
+          {:ok, rows} ->
+            conn
+            |> put_resp_content_type("application/json")
+            |> send_resp(200, Jason.encode!(rows))
+
+          {:not_found, _} ->
+            send_resp(conn, 404, [])
+        end
+    end
   end
 
   get "/pessoas/:id" do
     id = conn.params["id"]
 
-    case BackendBattle.AppRepo.get_by_id(id) do
+    case AppRepo.get_by_id(id) do
       {:not_found, _} ->
         send_resp(conn, 404, [])
 
@@ -62,11 +74,11 @@ defmodule BackendBattle.AppRouter do
   end
 
   defp handle_post(%{"apelido" => nick} = payload) do
-    case BackendBattle.Message.valid_payload?(payload) do
+    case Message.valid_payload?(payload) do
       :ok ->
         id = UUID.uuid5(:oid, nick)
 
-        case BackendBattle.AppRepo.member?(id, payload) do
+        case AppRepo.member?(id, payload) do
           :found -> :unprocessable
           :new -> {:ok, id}
         end
@@ -76,9 +88,8 @@ defmodule BackendBattle.AppRouter do
     end
   end
 
-
   get "/contagem-pessoas" do
-    total = BackendBattle.AppRepo.info() |> Enum.count |> to_string()
+    total = AppRepo.info() |> Enum.count() |> to_string()
     send_resp(conn, 200, total)
   end
 

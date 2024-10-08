@@ -1,8 +1,27 @@
 defmodule BackendBattle.Message do
+  import BackendBattle.MessageHelper
+
   @year_regex ~r/^\d{4}$/
   @dm_regex ~r/^\d{2}$/
 
-  import BackendBattle.MessageHelper
+  def term_to_search(msg) when is_bitstring(msg) do
+    msg
+    |> String.downcase()
+    |> (&Regex.replace(~r/\W+/, &1, "")).()
+  end
+
+  def term_to_search(msg) do
+    stack_t =
+      case msg["stack"] do
+        [] -> ""
+        nil -> ""
+        s -> Enum.join(s, "")
+      end
+
+    [stack_t, msg["apelido"], msg["nome"], msg["nascimento"]]
+    |> Enum.map(&term_to_search/1)
+    |> Enum.join("")
+  end
 
   def valid_payload?(%{"apelido" => nn, "nome" => n, "nascimento" => bd, "stack" => s}),
     do: valid_fields?(nn, n, bd, s)
