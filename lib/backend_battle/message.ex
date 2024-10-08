@@ -13,15 +13,6 @@ defmodule BackendBattle.Message do
   def valid_payload?(_), do: :bad_request
 
   defp valid_fields?(nick, name, bday, stack \\ []) do
-    1..4
-    |> Enum.reduce_while(:ok, fn idx, _acc ->
-      case idx do
-        1 -> valid_nickname?(nick) |> halt_or_continue()
-        2 -> valid_name?(name) |> halt_or_continue()
-        3 -> valid_bday?(bday) |> halt_or_continue()
-        4 -> valid_stacks?(stack) |> halt_or_continue()
-      end
-    end)
     [nick, name, bday, stack]
     |> Enum.reduce_while(:ok, fn field, _acc ->
       case field do
