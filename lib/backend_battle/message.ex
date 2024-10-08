@@ -13,19 +13,13 @@ defmodule BackendBattle.Message do
   def valid_payload?(_), do: :bad_request
 
   defp valid_fields?(nick, name, bday, stack \\ []) do
-    [nick, name, bday, stack]
-    |> Enum.reduce_while(:ok, fn field, _acc ->
-      case field do
-        ^nick -> valid_nickname?(nick) |> halt_or_continue()
-        ^name -> valid_name?(name) |> halt_or_continue()
-        ^bday -> valid_bday?(bday) |> halt_or_continue()
-        ^stack -> valid_stacks?(stack) |> halt_or_continue()
-      end
-    end)
+    with :ok <- valid_nickname?(nick),
+         :ok <- valid_name?(name),
+         :ok <- valid_bday?(bday),
+         :ok <- valid_stacks?(stack) do
+      :ok
+    end
   end
-
-  defp halt_or_continue(:ok), do: {:cont, :ok}
-  defp halt_or_continue(err), do: {:halt, err}
 
   # macro will generate a valid_nickname/1, that requires a non-empty string with at most 32 characters.
   validate_string_length(:valid_nickname?, 32)
