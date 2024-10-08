@@ -1,5 +1,4 @@
 defmodule BackendBattle.MixProject do
-
   use Mix.Project
 
   def project do
@@ -27,7 +26,7 @@ defmodule BackendBattle.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
       {:plug_cowboy, "~> 2.5"},
       {:jason, "~> 1.4"},
-      { :uuid, "~> 1.1" }
+      {:uuid, "~> 1.1"}
     ]
   end
 end
