@@ -5,11 +5,11 @@ defmodule BackendBattle.Application do
 
   use Application
 
-  @port System.get_env("PORT") || "4000"
+  @default_port "4000"
 
   @impl true
   def start(_type, _args) do
-    port = String.to_integer(@port)
+    port = (System.get_env("PORT") || @default_port) |> String.to_integer()
 
     children = [
       # Starts a worker by calling: BackendBattle.Worker.start_link(arg)
@@ -21,6 +21,6 @@ defmodule BackendBattle.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: BackendBattle.Supervisor]
     Supervisor.start_link(children, opts)
-    |> tap(fn _ -> IO.puts("🚀🚀 Server started at http://localhost:#{@port}") end)
+    |> tap(fn _ -> IO.puts("🚀🚀 Server started at http://localhost:#{port}") end)
   end
 end

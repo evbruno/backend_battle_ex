@@ -1,6 +1,6 @@
 # Instructions and Rules for Backend Battle - 2023 Q3 Edition
 
-![backend battle logo](/misc/logo.jpg)
+![backend battle logo](https://raw.githubusercontent.com/zanfranceschi/rinha-de-backend-2023-q3/refs/heads/main/misc/logo.jpg)
 
 ## Summary
 
