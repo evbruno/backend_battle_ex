@@ -1,4 +1,3 @@
-
 defmodule BackendBattle.AppRouter do
   use Plug.Router
 
@@ -16,8 +15,8 @@ defmodule BackendBattle.AppRouter do
     term = conn.params["t"]
 
     found = [
-      %{ id: UUID.uuid5(:oid, "Foo-#{term}"), apelido: "Foo#{term}" },
-      %{ id: UUID.uuid5(:oid, "Bar-#{term}"), apelido: "Bar#{term}" }
+      %{id: UUID.uuid5(:oid, "Foo-#{term}"), apelido: "Foo#{term}"},
+      %{id: UUID.uuid5(:oid, "Bar-#{term}"), apelido: "Bar#{term}"}
     ]
 
     conn
@@ -27,23 +26,34 @@ defmodule BackendBattle.AppRouter do
 
   get "/pessoas/:id" do
     id = conn.params["id"]
-    nick = "Foo"
 
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(200, Jason.encode!(%{id: id, apelido: nick}))
+    case BackendBattle.AppRepo.get_by_id(id) do
+      {:not_found, _} ->
+        send_resp(conn, 404, [])
+
+      {:ok, obj} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(obj))
+    end
   end
 
   post "/pessoas" do
     case conn.body_params do
-      %{"apelido" => nick} ->
+      %{"apelido" => _, "nome" => _, "nascimento" => _} = payload ->
+        case handle_post(payload) do
+          {:ok, id} ->
+            conn
+            |> put_resp_content_type("application/json")
+            |> put_resp_header("Location", "/pessoas/#{id}")
+            |> send_resp(201, [])
 
-        id = UUID.uuid5(:oid, nick)
+          :unprocessable ->
+            send_resp(conn, 422, [])
 
-        conn
-        |> put_resp_content_type("application/json")
-        |> put_resp_header("Location", "/pessoas/#{id}")
-        |> send_resp(201, [])
+          _ ->
+            send_resp(conn, 400, [])
+        end
 
       _ ->
         conn
@@ -51,8 +61,25 @@ defmodule BackendBattle.AppRouter do
     end
   end
 
+  defp handle_post(%{"apelido" => nick} = payload) do
+    case BackendBattle.Message.valid_payload?(payload) do
+      :ok ->
+        id = UUID.uuid5(:oid, nick)
+
+        case BackendBattle.AppRepo.member?(id, payload) do
+          :found -> :unprocessable
+          :new -> {:ok, id}
+        end
+
+      err ->
+        err
+    end
+  end
+
+
   get "/contagem-pessoas" do
-    send_resp(conn, 200, "42")
+    total = BackendBattle.AppRepo.info() |> Enum.count |> to_string()
+    send_resp(conn, 200, total)
   end
 
   # Default route for non-matching paths
